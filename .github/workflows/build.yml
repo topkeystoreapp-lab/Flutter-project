@@ -3,6 +3,9 @@ name: Build AAB
 on:
   push:
     branches: [ "main" ]
+  repository_dispatch:
+    types: [api_updated]
+  workflow_dispatch:
 
 jobs:
   build:
