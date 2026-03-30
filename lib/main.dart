@@ -41,22 +41,23 @@ class _RecipeHomeScreenState extends State<RecipeHomeScreen> {
     {
       'title': 'Breakfast',
       'image':
-          'https://images.unsplash.com/photo-1493770348161-369560ae357d?q=80&w=800&auto=format&fit=crop',
-    },
+      'https://images.unsplash.com/photo-1493770348161-369560ae357d?q=80&w=800&auto=format&fit=crop',
+    },.git/MERGE_MSG [unix] (12:18 30/03/2026)                                                                                                                  6,1 All
+    "~/AndroidStudioProjects/hello_world_flutter/.git/MERGE_MSG" [unix] 6L, 303B
     {
       'title': 'Dessert',
       'image':
-          'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?q=80&w=800&auto=format&fit=crop',
     },
     {
       'title': 'Lunch',
       'image':
-          'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=800&auto=format&fit=crop',
     },
     {
       'title': 'Dinner',
       'image':
-          'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop',
     },
   ];
 
@@ -64,22 +65,22 @@ class _RecipeHomeScreenState extends State<RecipeHomeScreen> {
     {
       'name': 'Esther T.',
       'image':
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop',
     },
     {
       'name': 'Jenny M.',
       'image':
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop',
     },
     {
       'name': 'Jacob U.',
       'image':
-          'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop',
     },
     {
       'name': 'Bessi K.',
       'image':
-          'https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=400&auto=format&fit=crop',
     },
   ];
 
@@ -105,14 +106,14 @@ class _RecipeHomeScreenState extends State<RecipeHomeScreen> {
     try {
       final response = await http
           .get(
-            Uri.parse(
-              'https://azstore.app/wp-json/control-app/v1/settings/home-banner',
-            ),
-            headers: const {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-          )
+        Uri.parse(
+          'https://azstore.app/wp-json/control-app/v1/settings/home-banner',
+        ),
+        headers: const {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
@@ -346,10 +347,10 @@ class _RecipeHomeScreenState extends State<RecipeHomeScreen> {
   }
 
   Widget _buildSectionHeader(
-    String title,
-    String action, {
-    VoidCallback? onActionTap,
-  }) {
+      String title,
+      String action, {
+        VoidCallback? onActionTap,
+      }) {
     return Row(
       children: [
         Text(
@@ -439,7 +440,7 @@ class _RecipeHomeScreenState extends State<RecipeHomeScreen> {
                           ? const Color(0xFFF56A33)
                           : const Color(0xFFA5A5A5),
                       fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -643,12 +644,12 @@ class HomeBannerCard extends StatelessWidget {
           children: [
             banner.bgImage.isNotEmpty
                 ? Image.network(
-                    banner.bgImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(color: const Color(0xFFF56A33));
-                    },
-                  )
+              banner.bgImage,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: const Color(0xFFF56A33));
+              },
+            )
                 : Container(color: const Color(0xFFF56A33)),
             Container(
               decoration: BoxDecoration(
@@ -718,8 +719,8 @@ class HomeBannerCard extends StatelessWidget {
                       alignment: banner.textAlign.toLowerCase() == 'center'
                           ? WrapAlignment.center
                           : banner.textAlign.toLowerCase() == 'right'
-                              ? WrapAlignment.end
-                              : WrapAlignment.start,
+                          ? WrapAlignment.end
+                          : WrapAlignment.start,
                       spacing: 10,
                       runSpacing: 10,
                       children: [
