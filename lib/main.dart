@@ -42,8 +42,7 @@ class _RecipeHomeScreenState extends State<RecipeHomeScreen> {
       'title': 'Breakfast',
       'image':
       'https://images.unsplash.com/photo-1493770348161-369560ae357d?q=80&w=800&auto=format&fit=crop',
-    },.git/MERGE_MSG [unix] (12:18 30/03/2026)                                                                                                                  6,1 All
-    "~/AndroidStudioProjects/hello_world_flutter/.git/MERGE_MSG" [unix] 6L, 303B
+    },
     {
       'title': 'Dessert',
       'image':
