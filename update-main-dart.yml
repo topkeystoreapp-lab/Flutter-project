@@ -1,0 +1,32 @@
+name: Update main.dart
+
+on:
+  workflow_dispatch:
+    inputs:
+      content:
+        description: Full main.dart code
+        required: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write main.dart
+        run: |
+          cat > lib/main.dart <<'EOF'
+          ${{ github.event.inputs.content }}
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/main.dart
+          git commit -m "Auto update main.dart" || echo "No changes"
+          git push
