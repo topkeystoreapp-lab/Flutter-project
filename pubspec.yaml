@@ -5,7 +5,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.11.0
+  # Match Flutter stable on CI (subosito/flutter-action channel: stable).
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:
