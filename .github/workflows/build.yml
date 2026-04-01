@@ -2,17 +2,82 @@ name: Build AAB
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   repository_dispatch:
     types: [api_updated]
   workflow_dispatch:
+    inputs:
+      user_id:
+        description: "User ID (optional for manual run)"
+        required: false
+        default: "manual"
+      domain_url:
+        description: "Domain URL (optional for manual run)"
+        required: false
+        default: "manual.local"
+      build_id:
+        description: "Build ID (optional for manual run)"
+        required: false
+        default: ""
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      # repository_dispatch payload
+      DISPATCH_USER_ID: ${{ github.event.client_payload.user_id }}
+      DISPATCH_DOMAIN_URL: ${{ github.event.client_payload.domain_url }}
+      DISPATCH_BUILD_ID: ${{ github.event.client_payload.build_id }}
+
+      # workflow_dispatch inputs
+      INPUT_USER_ID: ${{ github.event.inputs.user_id }}
+      INPUT_DOMAIN_URL: ${{ github.event.inputs.domain_url }}
+      INPUT_BUILD_ID: ${{ github.event.inputs.build_id }}
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve build metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # user_id
+          USER_ID="${DISPATCH_USER_ID:-}"
+          if [ -z "$USER_ID" ]; then USER_ID="${INPUT_USER_ID:-manual}"; fi
+
+          # domain_url
+          DOMAIN_URL="${DISPATCH_DOMAIN_URL:-}"
+          if [ -z "$DOMAIN_URL" ]; then DOMAIN_URL="${INPUT_DOMAIN_URL:-manual.local}"; fi
+
+          # build_id
+          BUILD_ID="${DISPATCH_BUILD_ID:-}"
+          if [ -z "$BUILD_ID" ]; then BUILD_ID="${INPUT_BUILD_ID:-}"; fi
+          if [ -z "$BUILD_ID" ]; then
+            BUILD_ID="bld_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          fi
+
+          # sanitize domain for filename
+          DOMAIN_SLUG="$(echo "$DOMAIN_URL" \
+            | sed -E 's#^https?://##' \
+            | sed -E 's#[^a-zA-Z0-9._-]#-#g')"
+
+          ARTIFACT_NAME="aab-user-${USER_ID}-${BUILD_ID}-${DOMAIN_SLUG}"
+          OUTPUT_FILE="app-${USER_ID}-${BUILD_ID}.aab"
+
+          echo "USER_ID=$USER_ID" >> "$GITHUB_ENV"
+          echo "DOMAIN_URL=$DOMAIN_URL" >> "$GITHUB_ENV"
+          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+          echo "DOMAIN_SLUG=$DOMAIN_SLUG" >> "$GITHUB_ENV"
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> "$GITHUB_ENV"
+          echo "OUTPUT_FILE=$OUTPUT_FILE" >> "$GITHUB_ENV"
+
+          echo "Resolved metadata:"
+          echo "USER_ID=$USER_ID"
+          echo "DOMAIN_URL=$DOMAIN_URL"
+          echo "BUILD_ID=$BUILD_ID"
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -21,9 +86,29 @@ jobs:
 
       - run: flutter --version
       - run: flutter pub get
-      - run: flutter build appbundle
+      - run: flutter build appbundle --release
+
+      - name: Rename AAB with unique build identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="build/app/outputs/bundle/release/app-release.aab"
+          DST="build/app/outputs/bundle/release/${OUTPUT_FILE}"
+          cp "$SRC" "$DST"
+          ls -lah build/app/outputs/bundle/release
 
       - uses: actions/upload-artifact@v4
         with:
-          name: app-release-aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: ${{ env.ARTIFACT_NAME }}
+          path: build/app/outputs/bundle/release/${{ env.OUTPUT_FILE }}
+
+      - name: Build summary
+        shell: bash
+        run: |
+          {
+            echo "## AAB Build Metadata"
+            echo "- User ID: \`${USER_ID}\`"
+            echo "- Domain: \`${DOMAIN_URL}\`"
+            echo "- Build ID: \`${BUILD_ID}\`"
+            echo "- Artifact: \`${ARTIFACT_NAME}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
