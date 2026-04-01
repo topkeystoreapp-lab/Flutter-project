@@ -35,6 +35,10 @@ jobs:
       INPUT_DOMAIN_URL: ${{ github.event.inputs.domain_url }}
       INPUT_BUILD_ID: ${{ github.event.inputs.build_id }}
 
+      # Callback (set these in GitHub Secrets)
+      CALLBACK_URL: ${{ secrets.CONTROL_APP_CALLBACK_URL }}
+      CALLBACK_SECRET: ${{ secrets.CONTROL_APP_CALLBACK_SECRET }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -43,22 +47,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          # user_id
           USER_ID="${DISPATCH_USER_ID:-}"
           if [ -z "$USER_ID" ]; then USER_ID="${INPUT_USER_ID:-manual}"; fi
 
-          # domain_url
           DOMAIN_URL="${DISPATCH_DOMAIN_URL:-}"
           if [ -z "$DOMAIN_URL" ]; then DOMAIN_URL="${INPUT_DOMAIN_URL:-manual.local}"; fi
 
-          # build_id
           BUILD_ID="${DISPATCH_BUILD_ID:-}"
           if [ -z "$BUILD_ID" ]; then BUILD_ID="${INPUT_BUILD_ID:-}"; fi
           if [ -z "$BUILD_ID" ]; then
             BUILD_ID="bld_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           fi
 
-          # sanitize domain for filename
           DOMAIN_SLUG="$(echo "$DOMAIN_URL" \
             | sed -E 's#^https?://##' \
             | sed -E 's#[^a-zA-Z0-9._-]#-#g')"
@@ -73,11 +73,21 @@ jobs:
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> "$GITHUB_ENV"
           echo "OUTPUT_FILE=$OUTPUT_FILE" >> "$GITHUB_ENV"
 
-          echo "Resolved metadata:"
-          echo "USER_ID=$USER_ID"
-          echo "DOMAIN_URL=$DOMAIN_URL"
-          echo "BUILD_ID=$BUILD_ID"
-          echo "ARTIFACT_NAME=$ARTIFACT_NAME"
+      - name: Mark running (callback)
+        if: ${{ env.CALLBACK_URL != '' && env.CALLBACK_SECRET != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BODY=$(jq -n \
+            --arg build_id "$BUILD_ID" \
+            --arg status "running" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            '{build_id:$build_id,status:$status,github_run_id:$run_id}')
+          SIG=$(printf "%s" "$BODY" | openssl dgst -sha256 -hmac "$CALLBACK_SECRET" -binary | xxd -p -c 256)
+          curl -sS -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Control-Signature: $SIG" \
+            -d "$BODY"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -101,6 +111,41 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: build/app/outputs/bundle/release/${{ env.OUTPUT_FILE }}
+
+      - name: Mark success (callback)
+        if: ${{ success() && env.CALLBACK_URL != '' && env.CALLBACK_SECRET != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          BODY=$(jq -n \
+            --arg build_id "$BUILD_ID" \
+            --arg status "success" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg artifact_url "$ARTIFACT_URL" \
+            '{build_id:$build_id,status:$status,github_run_id:$run_id,artifact_url:$artifact_url}')
+          SIG=$(printf "%s" "$BODY" | openssl dgst -sha256 -hmac "$CALLBACK_SECRET" -binary | xxd -p -c 256)
+          curl -sS -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Control-Signature: $SIG" \
+            -d "$BODY"
+
+      - name: Mark failed (callback)
+        if: ${{ failure() && env.CALLBACK_URL != '' && env.CALLBACK_SECRET != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BODY=$(jq -n \
+            --arg build_id "$BUILD_ID" \
+            --arg status "failed" \
+            --arg run_id "${GITHUB_RUN_ID}" \
+            --arg msg "Build failed in workflow" \
+            '{build_id:$build_id,status:$status,github_run_id:$run_id,error_message:$msg}')
+          SIG=$(printf "%s" "$BODY" | openssl dgst -sha256 -hmac "$CALLBACK_SECRET" -binary | xxd -p -c 256)
+          curl -sS -X POST "$CALLBACK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Control-Signature: $SIG" \
+            -d "$BODY"
 
       - name: Build summary
         shell: bash
